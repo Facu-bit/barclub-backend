@@ -107,7 +107,7 @@ public class ReservaService {
         return toDTO(reservaRepository.save(reserva));
     }
 
-    // ---- Cancelar reserva (con cláusula de 2 horas) ----
+    // ---- Cancelar reserva ----
     public ReservaResponseDTO cancelar(Long id) {
         Reserva reserva = reservaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Reserva", id));
@@ -117,15 +117,6 @@ public class ReservaService {
         }
         if (reserva.getEstado() == Reserva.EstadoReserva.COMPLETADA) {
             throw new BusinessException("No se puede cancelar una reserva ya completada");
-        }
-
-        // Verificar cláusula de 2 horas antes del horario de la reserva
-        LocalDateTime momentoReserva = LocalDateTime.of(reserva.getFecha(), reserva.getHora());
-        LocalDateTime limiteParaCancelar = momentoReserva.minusHours(2);
-        if (LocalDateTime.now().isAfter(limiteParaCancelar)) {
-            throw new BusinessException(
-                "El tiempo para cancelar esta reserva ha vencido. Solo se puede cancelar hasta 2 horas antes del horario reservado"
-            );
         }
 
         reserva.setEstado(Reserva.EstadoReserva.CANCELADA);
@@ -146,9 +137,7 @@ public class ReservaService {
 
     // ---- Verificar si es cancelable ----
     private boolean esCancelable(Reserva reserva) {
-        if (reserva.getEstado() != Reserva.EstadoReserva.CONFIRMADA) return false;
-        LocalDateTime momentoReserva = LocalDateTime.of(reserva.getFecha(), reserva.getHora());
-        return LocalDateTime.now().isBefore(momentoReserva.minusHours(2));
+        return reserva.getEstado() == Reserva.EstadoReserva.CONFIRMADA;
     }
 
     // ---- Mapper ----
